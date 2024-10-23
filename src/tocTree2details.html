@@ -1,0 +1,17 @@
+
+{{- partial "tocLib/inline/tocTree2details" . -}}
+
+{{- define "partials/tocLib/inline/tocTree2details" -}}
+  {{- if .headingLevel -}}
+    <details open>
+      <summary><a href="#{{ $.tagInfo.attributes.id }}">{{ $.innerHTML | safeHTML }}</a></summary>
+      {{- range $_, $c := $.children -}}
+        {{- partial "tocLib/inline/tocTree2details" $c -}}
+      {{- end -}}
+    </details>
+  {{- else -}}
+    {{- range $_, $c := $.children -}}
+      {{- partial "tocLib/inline/tocTree2details" $c -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

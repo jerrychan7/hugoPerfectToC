@@ -3,7 +3,7 @@
 
 [English](./README.md)
 
-一个用于生成符合直觉的目录的 Hugo 模板库。
+一个用于生成符合直觉的目录的 [Hugo](https://gohugo.io/) 模板库。
 
 - [Hugo Perfect ToC Generator](#hugo-perfect-toc-generator)
   - [特性](#特性)
@@ -21,9 +21,10 @@
 * [x] 符合直觉的目录生成
 * [x] 不输出任何多余的层级或空白层级
 * [x] 合理的处理引用块/列表中的目录
-* [ ] Hugo Goldmark Extras 扩展支持（[hugo#12605](https://github.com/gohugoio/hugo/issues/12605)）
+* [x] Hugo Goldmark Extras 扩展支持（[hugo#12605](https://github.com/gohugoio/hugo/issues/12605)）
+* [x] 在 Hugo 的 [heading render hooks](https://gohugo.io/render-hooks/headings/) 之后渲染
 * [x] ul 元素渲染
-* [ ] ol 元素渲染
+* [x] ol 元素渲染
 * [x] details 元素渲染
 * [ ] ASCII 风格渲染
 * [ ] 用户自定义渲染器
@@ -97,15 +98,15 @@ draft: false
 
 ↓ blockquote 元素中的标题。希望和其他标题元素一样能够通过 ID 跳转。
 
-> # H1
+> # H1 在 blockquote 中
 >
-> ## H2
+> ## H2 在 blockquote 中
 
 ------------------------------
 
 ## 表格
 
-##### 表格中的子标题
+##### 非递增标题
 
 ↑ 一些非递增的标题。
 
@@ -113,9 +114,9 @@ draft: false
 
 # ul/ol 元素中的标题
 
-* ## h2
-  * ### h3
-* #### h4
+* ## h2 在顶层
+  * ### h3 在第二层
+* #### h4 在顶层
 
 ------------------------------
 
@@ -123,9 +124,9 @@ draft: false
 
 ```
 
-|`PAGE.TableOfContents`|本项目的输出|
+| `PAGE.TableOfContents` | 本项目的输出 |
 |---|---|
-|<ul><li><ul><li><ul><li><ul><li>非 h1/h2 打头</li></ul></li></ul></li><li>标题</li></ul></li><li>H1<ul><li>H2</li><li>表格<ul><li><ul><li><ul><li>表格中的子标题</li></ul></li></ul></li></ul></li></ul></li><li>ul/ol 元素中的标题<ul><li>h2<ul><li>h3<ul><li>h4</li></ul></li></ul></li></ul></li><li>测试删除元素</li></ul>|<ul><li>非 h1/h2 打头</li><li>标题<ul><li>H1<ul><li>H2</li></ul></li></ul></li><li>表格<ul><li>表格中的子标题</li></ul></li><li>ul/ol 元素中的标题<ul><li>h2<ul><li>h3</li></ul></li><li>h4</li></ul></li><li>测试 <del>删除</del> 元素</li></ul>|
+| <ul><li><ul><li><ul><li><ul><li>非 h1/h2 打头</li></ul></li></ul></li><li>标题</li></ul></li><li>H1 在 blockquote 中<ul><li>H2 在 blockquote 中</li><li>表格<ul><li><ul><li><ul><li>非递增标题</li></ul></li></ul></li></ul></li></ul></li><li>ul/ol 元素中的标题<ul><li>h2 在顶层<ul><li>h3 在第二层<ul><li>h4 在顶层</li></ul></li></ul></li></ul></li><li>测试删除元素</li></ul> | <ul><li>非 h1/h2 打头</li><li>标题<ul><li>H1 在 blockquote 中<ul><li>H2 在 blockquote 中</li></ul></li></ul></li><li>表格<ul><li>非递增标题</li></ul></li><li>ul/ol 元素中的标题<ul><li>h2 在顶层<ul><li>h3 在第二层</li></ul></li><li>h4 在顶层</li></ul></li><li>测试 <del>删除</del> 元素</li></ul> |
 
 ## 原理
 
@@ -165,7 +166,7 @@ draft: false
 | 字段 | 类型 | 解释 |
 |---|---|---|
 | `tagInfo` | `TagInfo` | [标签的信息](#taginfo-标签信息) |
-| `headingLevel` | `bool`/`int` | 如果是h1~h6并且有id属性则值为1~6，否则为false或者0 |
+| `headingLevel` | `bool`/`int` | 如果是 h1 \~ h6 并且有 id 属性则值为 1\~6，否则为 `false` 或者 0 |
 | `children` | `[]DocNode` | 包含了所有子节点 |
 | `str` | `string` | `slicestr PAGE.Content start end` （相当于 `outerHTML`） |
 | `innerHTML` | `string` | 去除起始和结束标签后内部的内容 |
@@ -204,7 +205,7 @@ draft: false
 |---|---|---|
 | `start` | `int` | 节点在 `PAGE.Content` 中的起始下标 |
 | `end` | `int` | 节点在 `PAGE.Content` 中的结束下标 + 1 |
-| `headingLevel` | `bool`/`int` | 如果根节点则为false，否则为1~6 |
+| `headingLevel` | `bool`/`int` | 如果根节点则为 `false`，否则为1\~6 |
 | `children` | `[]TocNode` | 包含了所有子节点 |
 
 如果不是根节点（`headingLevel != false`），拥有以下额外字段：

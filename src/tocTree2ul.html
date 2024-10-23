@@ -1,0 +1,14 @@
+
+{{- partial "tocLib/inline/tocTree2ul" . -}}
+
+{{- define "partials/tocLib/inline/tocTree2ul" -}}
+  <ul>
+    {{- range $_, $c := $.children -}}
+      <li><a href="#{{ $c.tagInfo.attributes.id }}">{{ $c.innerHTML | safeHTML }}</a>
+        {{- if $c.children -}}
+          {{- partial "tocLib/inline/tocTree2ul" $c -}}
+        {{- end -}}
+      </li>
+    {{- end -}}
+  </ul>
+{{- end -}}
