@@ -10,6 +10,10 @@
   - [用法](#用法)
   - [项目存在理由](#项目存在理由)
   - [原理](#原理)
+  - [数据结构](#数据结构)
+    - [`DocNode` 文档树节点](#docnode-文档树节点)
+    - [`TagInfo` 标签信息](#taginfo-标签信息)
+    - [`TocNode` 目录树节点](#tocnode-目录树节点)
   - [什么是符合直觉的目录](#什么是符合直觉的目录)
 
 ## 特性
@@ -62,7 +66,7 @@
 * `"tocLib/tocTree2ol.html"` 对应 Hugo 配置 `markup.tableOfContents.ordered = true` 功能
 * `"tocLib/tocTree2details.html"`
 
-如果你想自定义渲染器，或者任何高级的玩法，你可能需要参考源码。
+如果你想自定义渲染器，或者任何高级的玩法，你可能需要查看下面的[原理](#原理)和[数据结构](#数据结构)章节，并参考源码。
 
 ## 项目存在理由
 
@@ -132,6 +136,83 @@ draft: false
 
 > 为何不用 `PAGE.Fragments`？  
 > 这是由于这个结构本身就是 Hugo 在生成 `PAGE.TableOfContents` 时一起生成的，因此无法通过这个来准确的还原出符合直觉的目录。
+
+## 数据结构
+
+### `DocNode` 文档树节点
+
+| 字段 | 类型 | 解释 |
+|---|---|---|
+| `start` | `int` | 节点在 `PAGE.Content` 中的起始下标 |
+| `end` | `int` | 节点在 `PAGE.Content` 中的结束下标 + 1 |
+| `id` | `string` | 节点唯一标识符，辅助后续算法实现，值为 `"start,end"` |
+| `type` | `string` | 节点的类型。可能的值有：`root`, `text`, `tag`, `comment` |
+
+对于 `type` 为 `root` 的节点，拥有以下额外字段：
+
+| 字段 | 类型 | 解释 |
+|---|---|---|
+| `children` | `[]DocNode` | 包含了所有子节点 |
+
+对于 `type` 为 `text` 的节点，拥有以下额外字段：
+
+| 字段 | 类型 | 解释 |
+|---|---|---|
+| `str` | `string` | `slicestr PAGE.Content start end` |
+
+对于 `type` 为 `tag` 的节点，拥有以下额外字段：
+
+| 字段 | 类型 | 解释 |
+|---|---|---|
+| `tagInfo` | `TagInfo` | [标签的信息](#taginfo-标签信息) |
+| `headingLevel` | `bool`/`int` | 如果是h1~h6并且有id属性则值为1~6，否则为false或者0 |
+| `children` | `[]DocNode` | 包含了所有子节点 |
+| `str` | `string` | `slicestr PAGE.Content start end` （相当于 `outerHTML`） |
+| `innerHTML` | `string` | 去除起始和结束标签后内部的内容 |
+
+对于 `type` 为 `comment` 的节点，拥有以下额外字段：
+
+| 字段 | 类型 | 解释 |
+|---|---|---|
+| `str` | `string` | `slicestr PAGE.Content start end` （包含 `<!--` 和 `-->`） |
+
+### `TagInfo` 标签信息
+
+| 字段 | 类型 | 解释 |
+|---|---|---|
+| `original` | `string` | 原始的起始标签字符串 |
+| `tagName` | `string` | 标签名 |
+| `attributes` | `dict` | 属性，详见下 |
+| `isSelfClose` | `bool` | 是否是自闭合标签 |
+
+例如，对于：
+
+```html
+<p open data-a = "asdf" data-b = qwer data-c = 'zxcv' asdf-a = >qwer</p>
+```
+
+将会有 `attributes`：
+
+```json
+{ "open": "", "data-a": "asdf", "data-b": "qwer", "data-c": "zxcv", "asdf-a": "" }
+```
+
+
+### `TocNode` 目录树节点
+
+| 字段 | 类型 | 解释 |
+|---|---|---|
+| `start` | `int` | 节点在 `PAGE.Content` 中的起始下标 |
+| `end` | `int` | 节点在 `PAGE.Content` 中的结束下标 + 1 |
+| `headingLevel` | `bool`/`int` | 如果根节点则为false，否则为1~6 |
+| `children` | `[]TocNode` | 包含了所有子节点 |
+
+如果不是根节点（`headingLevel != false`），拥有以下额外字段：
+
+| 字段 | 类型 | 解释 |
+|---|---|---|
+| `innerHTML` | `string` | 去除标签后内部的内容 |
+| `tagInfo` | `TagInfo` | [标签的信息](#taginfo-标签信息) |
 
 ## 什么是符合直觉的目录
 
