@@ -78,7 +78,19 @@
 3. 在引用块或有序/无序列表中的标题输出是不合逻辑的。符合直觉的应该是将其视为子标题。
 4. Hugo Goldmark Extras 扩展的一些标题无法正确呈现（[hugo#12605](https://github.com/gohugoio/hugo/issues/12605)）
 
-至于什么叫不符合直觉的？究竟什么是符合直觉的？请看文末章节 [# 什么是符合直觉的目录](#什么是符合直觉的目录)。
+> 至于什么叫不符合直觉的？究竟什么是符合直觉的？请看文末章节 [# 什么是符合直觉的目录](#什么是符合直觉的目录)。
+
+假设启用了扩展：
+
+```yaml
+markup:
+  goldmark:
+    extensions:
+      strikethrough: false
+    extras:
+      subscript:
+        enable: true
+```
 
 对于如下的 markdown：
 
@@ -119,13 +131,13 @@ draft: false
 
 ------------------------------
 
-# 测试 ~~删除~~ 元素
+# H~2~O
 
 ```
 
 | `PAGE.TableOfContents` | 本项目的输出 |
 |---|---|
-| <ul><li><ul><li><ul><li><ul><li>非 h1/h2 打头</li></ul></li></ul></li><li>标题</li></ul></li><li>H1 在 blockquote 中<ul><li>H2 在 blockquote 中</li><li>表格<ul><li><ul><li><ul><li>非递增标题</li></ul></li></ul></li></ul></li></ul></li><li>ul/ol 元素中的标题<ul><li>h2 在顶层<ul><li>h3 在第二层<ul><li>h4 在顶层</li></ul></li></ul></li></ul></li><li>测试删除元素</li></ul> | <ul><li>非 h1/h2 打头</li><li>标题<ul><li>H1 在 blockquote 中<ul><li>H2 在 blockquote 中</li></ul></li></ul></li><li>表格<ul><li>非递增标题</li></ul></li><li>ul/ol 元素中的标题<ul><li>h2 在顶层<ul><li>h3 在第二层</li></ul></li><li>h4 在顶层</li></ul></li><li>测试 <del>删除</del> 元素</li></ul> |
+| <ul><li><ul><li><ul><li><ul><li>非 h1/h2 打头</li></ul></li></ul></li><li>标题</li></ul></li><li>H1 在 blockquote 中<ul><li>H2 在 blockquote 中</li><li>表格<ul><li><ul><li><ul><li>非递增标题</li></ul></li></ul></li></ul></li></ul></li><li>ul/ol 元素中的标题<ul><li>h2 在顶层<ul><li>h3 在第二层<ul><li>h4 在顶层</li></ul></li></ul></li></ul></li><li>H<del>2</del>O</li></ul> | <ul><li>非 h1/h2 打头</li><li>标题<ul><li>H1 在 blockquote 中<ul><li>H2 在 blockquote 中</li></ul></li></ul></li><li>表格<ul><li>非递增标题</li></ul></li><li>ul/ol 元素中的标题<ul><li>h2 在顶层<ul><li>h3 在第二层</li></ul></li><li>h4 在顶层</li></ul></li><li>H<sub>2</sub>O</li></ul> |
 
 ## 原理
 
