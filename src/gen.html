@@ -1,0 +1,8 @@
+
+{{- $page := .page -}}
+{{- $renderer := or .renderer "tocLib/tocTree2ul.html" -}}
+
+{{- $docTree := partialCached "tocLib/buildDocTree.html" $page $page.Content -}}
+{{- $docTree = partialCached "tocLib/rmNodeUnrelated2Toc.html" $docTree $page.Content -}}
+{{- $tocTree := partialCached "tocLib/doc2tocTree.html" $docTree $page.Content -}}
+{{- partialCached $renderer $tocTree $page.Content -}}
