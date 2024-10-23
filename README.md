@@ -34,8 +34,7 @@ A [Hugo](https://gohugo.io/) template library for generating the intuitive table
 
 ## Usage
 
-Download the latest package in [Releases Page](./releases).
-Put all the html files in the `partials/tocLib` folder. Then you can start using it.
+Put all the HTML files in the `/tocLib` directory of this project into the `your site or theme/partials/tocLib` folder. Then you can start using it.
 
 For example, if you want to add a ToC at the beginning of the article, `layouts/_default/single.html`:
 

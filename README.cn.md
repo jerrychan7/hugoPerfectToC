@@ -34,8 +34,7 @@
 
 ## 用法
 
-在 [Releases](./releases) 中下载最新的打包。
-将所有的html文件都放在 `partials/tocLib` 文件夹中。然后你就可以开始使用了。
+将本项目中 `/tocLib` 目录下所有的html文件都放在 `你的网站或主题/partials/tocLib` 文件夹中。然后你就可以开始使用了。
 
 例如你想在文章的开头添加目录，`layouts/_default/single.html`：
 
