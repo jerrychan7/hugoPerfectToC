@@ -1,0 +1,183 @@
+
+{{/*
+  Generate a document tree from the content of a page.
+  The tree is used to generate a table of contents.
+
+  @context hugo.Page; The page to generate the tree for.
+
+  @return dict DocNode; The document tree.
+*/}}
+
+{{- return partial "tocLib/inline/buildTree" (dict
+  "content" (string .Content)
+  "offset" 0
+  "parentTagName" ""
+) -}}
+
+{{ define "partials/tocLib/inline/buildTree" }}
+  {{ $idx := $.offset }}
+  {{ $content := split $.content "" }}
+  {{ $len := len $content }}
+
+  {{ $rootNodes := slice }}
+  {{ range $_, $_ := $content }}
+    {{ if ge $idx $len }}{{ break }}{{ end }}
+    {{ $chr := index $content $idx }}
+    {{ $tc := slicestr $.content $idx }}
+
+    {{ $node := dict
+      "start" $idx
+      "end" (add $idx 1)
+      "id" (printf "%d,%d" $idx (add $idx 1))
+      "type" "text"
+      "str" $chr
+    }}
+
+    {{ $isText := true }}
+
+    {{ if eq $chr "<" }}
+      {{ if hasPrefix $tc (printf "</%s" $.parentTagName) }}
+        {{ $tag := index (findRE (printf "</%s\\s*>" $.parentTagName) $tc 1) 0 }}
+        {{ if $tag }}
+          {{ $idx = add $idx (len $tag) -1 }}
+          {{ break }}
+        {{ end }}
+      {{ else if hasPrefix $tc "<!--" }}
+        {{ $comment := index (findRE `(?s)<!--.*?-->` $tc 1) 0 }}
+        {{ if $comment }}
+          {{ $end := add $idx (len $comment) }}
+          {{ $node = dict
+            "start" $idx
+            "end" $end
+            "id" (printf "%d,%d" $idx $end)
+            "type" "comment"
+            "str" $comment
+          }}
+          {{ $idx = add $idx $end -1 }}
+          {{ $isText = false }}
+        {{ end }}
+      {{ else }}
+        {{ $t := index (findRESubmatch `<([\w-]+)(?:\s+[\w-]+(?:\s*=\s*(?:(?:"(?:[^""]*)")|(?:'(?:[^'']*)')|(?:[^\s>]*)))?)*\s*(\/?)>` $tc 1) 0 }}
+        {{ if $t }}
+          {{ $isText = false }}
+
+          {{ $ori := index $t 0 }}
+          {{ $tag := index $t 1 }}
+          {{ $isSelfClose := index $t 2 }}
+
+          {{ $attr := dict }}
+          {{ range (findRESubmatch
+            `([\w-]+)(?:\s*=\s*(?:(?:"([^""]*)")|(?:'([^'']*)')|([^\s>]*)))?`
+            (slicestr
+              $ori
+              (add (len $tag) 1)
+              (add (len $ori) (cond (eq $isSelfClose "/") -2 -1))
+            )
+          ) }}
+            {{ $key := index . 1 }}
+            {{ $val := or (index . 2) (index . 3) (index . 4) "" }}
+            {{ $attr = $attr | merge (dict $key $val) }}
+          {{ end }}
+
+          {{ $children := (dict
+            "children" slice
+            "start" (add $idx (len $ori))
+            "end" (add $idx (len $ori))
+          ) }}
+
+          {{ if (eq $tag
+            "br" "meta" "base" "hr" "img" "input" "col" "frame" "link" "area" "param" "object" "applet" "embed" "keygen" "source"
+          ) }}
+            {{ if ne $isSelfClose "/" }}
+              {{ $end := findRE (printf "(?s).*?</%s\\s*>" $tag) (
+                slicestr $tc (len $ori)
+              ) 1 }}
+              {{ if $end }}
+                {{ $children = merge $children (dict
+                  "end" (add $children.end (len (index $end 0)) -1)
+                ) }}
+              {{ end }}
+              {{ $isSelfClose = "/" }}
+            {{ else }}
+              {{ $children = merge $children (dict
+                "end" (sub $children.end 1)
+              ) }}
+            {{ end }}
+          {{ end }}
+
+          {{ $tagInfo := (dict
+            "original" $ori
+            "tagName" $tag
+            "attributes" $attr
+            "isSelfClose" (eq $isSelfClose "/")
+          ) }}
+
+          {{ if ne $isSelfClose "/" }}
+            {{ $children = (partial "tocLib/inline/buildTree" (dict
+              "offset" (add $idx (len $ori))
+              "content" $.content
+              "parentTagName" $tag
+            )) }}
+          {{ end }}
+
+          {{ $end := add $children.end 1 }}
+          {{/*
+            I don't know why using (slicestr $. content $idx $end) here sometimes results in an error:
+              error calling slicestr: slice boundaries out of range
+            Perhaps the impact is caused by CJK/Unicode characters?
+          */}}
+          {{ $node = (dict
+            "start" $idx
+            "end" $end
+            "id" (printf "%d,%d" $idx $end)
+            "type" "tag"
+            "tagInfo" $tagInfo
+            "headingLevel" (and
+              (eq $tag "h1" "h2" "h3" "h4" "h5" "h6")
+              $tagInfo.attributes.id
+              (int (last 1 $tag))
+            )
+            "children" $children.children
+            "str" (first (sub $end $idx) (after $idx $.content))
+            "innerHTML" ""
+          ) }}
+          {{ if len $children.children }}
+            {{ $node = merge $node (dict
+              "innerHTML" (slicestr $.content
+                (index $children.children 0).start
+                (index (last 1 $children.children) 0).end
+              )
+            ) }}
+          {{ end }}
+          {{ $idx = $children.end }}
+        {{ end }}
+      {{ end }}
+    {{ end }}
+
+    {{ if (and $isText (len $rootNodes) (eq (index (last 1 $rootNodes) 0).type "text")) }}
+      {{ $t := index (findRE `[^<]+` $tc 1) 0 }}
+      {{ $idx = add $idx (len $t) -1 }}
+      {{ $pN := index (last 1 $rootNodes) 0 }}
+      {{ $pN = merge $pN (dict
+        "str" (printf "%s%s" $pN.str $t)
+        "end" (add $idx 1)
+        "id" (printf "%d,%d" $pN.start (add $idx 1))
+      ) }}
+      {{ $rootNodes = (first (len $rootNodes | add -1) $rootNodes) | append $pN }}
+      {{ $idx = add $idx 1 }}
+      {{ continue }}
+    {{ end }}
+
+    {{ $rootNodes = $rootNodes | append $node }}
+    {{ $idx = add $idx 1 }}
+
+  {{ end }}
+
+  {{ return (dict
+    "start" $.offset
+    "end" $idx
+    "id" (printf "%d,%d" $.offset $idx)
+    "type" "root"
+    "children" $rootNodes
+  ) }}
+{{ end }}
