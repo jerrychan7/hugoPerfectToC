@@ -26,8 +26,8 @@
 * [x] ul 元素渲染
 * [x] ol 元素渲染
 * [x] details 元素渲染
-* [ ] ASCII 风格渲染
-* [ ] 用户自定义渲染器
+* [x] ASCII 风格渲染
+* [x] 用户自定义渲染器
 * [x] 能随意使用的目录树，以实现任何你想要的高级功能
 * [ ] 配置 `startLevel` 和 `endLevel`
 * [ ] 性能优化
@@ -65,6 +65,7 @@
 * `"tocLib/tocTree2ul.html"` 缺省值。对应 Hugo 配置 `markup.tableOfContents.ordered = false` 功能
 * `"tocLib/tocTree2ol.html"` 对应 Hugo 配置 `markup.tableOfContents.ordered = true` 功能
 * `"tocLib/tocTree2details.html"`
+* `"tocLib/tocTree2ascii.html"`
 
 如果你想自定义渲染器，或者任何高级的玩法，你可能需要查看下面的[原理](#原理)和[数据结构](#数据结构)章节，并参考源码。
 
@@ -137,7 +138,7 @@ draft: false
 
 | `PAGE.TableOfContents` | 本项目的输出 |
 |---|---|
-| <ul><li><ul><li><ul><li><ul><li>非 h1/h2 打头</li></ul></li></ul></li><li>标题</li></ul></li><li>H1 在 blockquote 中<ul><li>H2 在 blockquote 中</li><li>表格<ul><li><ul><li><ul><li>非递增标题</li></ul></li></ul></li></ul></li></ul></li><li>ul/ol 元素中的标题<ul><li>h2 在顶层<ul><li>h3 在第二层<ul><li>h4 在顶层</li></ul></li></ul></li></ul></li><li>H<del>2</del>O</li></ul> | <ul><li>非 h1/h2 打头</li><li>标题<ul><li>H1 在 blockquote 中<ul><li>H2 在 blockquote 中</li></ul></li></ul></li><li>表格<ul><li>非递增标题</li></ul></li><li>ul/ol 元素中的标题<ul><li>h2 在顶层<ul><li>h3 在第二层</li></ul></li><li>h4 在顶层</li></ul></li><li>H<sub>2</sub>O</li></ul> |
+| <ul><li><ul><li><ul><li><ul><li>非 h1/h2 打头</li></ul></li></ul></li><li>标题</li></ul></li><li>H1 在 blockquote 中<ul><li>H2 在 blockquote 中</li><li>表格<ul><li><ul><li><ul><li>非递增标题</li></ul></li></ul></li></ul></li></ul></li><li>ul/ol 元素中的标题<ul><li>h2 在顶层<ul><li>h3 在第二层<ul><li>h4 在顶层</li></ul></li></ul></li></ul></li><li>H2O</li></ul> | <ul><li>非 h1/h2 打头</li><li>标题<ul><li>H1 在 blockquote 中<ul><li>H2 在 blockquote 中</li></ul></li></ul></li><li>表格<ul><li>非递增标题</li></ul></li><li>ul/ol 元素中的标题<ul><li>h2 在顶层<ul><li>h3 在第二层</li></ul></li><li>h4 在顶层</li></ul></li><li>H<sub>2</sub>O</li></ul> |
 
 ## 原理
 
@@ -278,13 +279,13 @@ draft: false
 
 1. h1 和 h2 作为同级的看待（方案1）。将会产生：
    
-   ```txt
+   ```text
    +-- h1
    `-- h2
    ```
 2. h2 作为 h1 的子代（方案2）。将会产生：
    
-   ```txt
+   ```text
    `-- h1
        `-- h2
    ```
@@ -306,7 +307,7 @@ draft: false
 
 最终本项目采用的是方案1。那例2的目录是：
 
-```txt
+```text
 +-- h1
 |   +-- h2 - 1
 |   `-- h3

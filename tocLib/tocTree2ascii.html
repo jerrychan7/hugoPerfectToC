@@ -1,0 +1,33 @@
+
+{{/*
+<pre>
++-- h1
+|   +-- h2
+|   `-- h3
++-- h1
+|   `-- h2
+`-- h1
+    +-- h3
+    `-- h4
+</pre>
+*/}}
+
+<pre>
+{{- partial "tocLib/inline/tocTree2ascii" . -}}
+</pre>
+
+{{- define "partials/tocLib/inline/tocTree2ascii" -}}
+  {{- $len := len $.children -}}
+  {{- range $idx, $c := $.children -}}
+    {{- $isLastNode := (eq (add $idx 1) $len) -}}
+    {{- cond $isLastNode "`-- " "+-- " -}}
+    <a href="#{{ $c.tagInfo.attributes.id }}">{{ $c.innerHTML | safeHTML }}</a>
+    {{- if $c.children -}}
+      {{- partial "tocLib/inline/tocTree2ascii" $c
+        | replaceRE `\n|^` (cond $isLastNode "\n    " "\n|   ")
+        | safeHTML
+      -}}
+    {{- end -}}
+    {{- cond $isLastNode "" "\n" -}}
+  {{- end -}}
+{{- end -}}
