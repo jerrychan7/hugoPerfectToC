@@ -45,7 +45,7 @@
       {{ else if hasPrefix $tc "<!--" }}
         {{ $comment := index (findRE `(?s)<!--.*?-->` $tc 1) 0 }}
         {{ if $comment }}
-          {{ $end := add $idx (len $comment) }}
+          {{ $end := add $idx (strings.RuneCount $comment) }}
           {{ $node = dict
             "start" $idx
             "end" $end
@@ -63,15 +63,15 @@
 
           {{ $ori := index $t 0 }}
           {{ $tag := index $t 1 }}
-          {{ $isSelfClose := index $t 2 }}
+          {{ $isSelfClose := eq (index $t 2) "/" }}
 
           {{ $attr := dict }}
           {{ range (findRESubmatch
             `([\w-]+)(?:\s*=\s*(?:(?:"([^""]*)")|(?:'([^'']*)')|([^\s>]*)))?`
             (slicestr
               $ori
-              (add (len $tag) 1)
-              (add (len $ori) (cond (eq $isSelfClose "/") -2 -1))
+              (add (strings.RuneCount $tag) 1)
+              (add (strings.RuneCount $ori) (cond $isSelfClose -2 -1))
             )
           ) }}
             {{ $key := index . 1 }}
@@ -81,50 +81,51 @@
 
           {{ $children := (dict
             "children" slice
-            "start" (add $idx (len $ori))
-            "end" (add $idx (len $ori))
+            "start" (add $idx (strings.RuneCount $ori))
+            "end" (add $idx (strings.RuneCount $ori))
           ) }}
 
           {{ if (eq $tag
             "br" "meta" "base" "hr" "img" "input" "col" "frame" "link" "area" "param" "object" "applet" "embed" "keygen" "source"
           ) }}
-            {{ if ne $isSelfClose "/" }}
-              {{ $end := findRE (printf "(?s).*?</%s\\s*>" $tag) (
-                slicestr $tc (len $ori)
+            {{ $endIdx := sub $children.end 1 }}
+            {{ if not $isSelfClose }}
+              {{ $endTag := findRE (printf "(?s).*?</%s\\s*>" $tag) (
+                slicestr $tc (strings.RuneCount $ori)
               ) 1 }}
-              {{ if $end }}
-                {{ $children = merge $children (dict
-                  "end" (add $children.end (len (index $end 0)) -1)
-                ) }}
+              {{ if $endTag }}
+                {{ $endIdx = add $endIdx (strings.RuneCount (index $endTag 0)) }}
               {{ end }}
-              {{ $isSelfClose = "/" }}
-            {{ else }}
-              {{ $children = merge $children (dict
-                "end" (sub $children.end 1)
-              ) }}
+              {{ $isSelfClose = true }}
             {{ end }}
+            {{ $children = merge $children (dict "end" $endIdx) }}
           {{ end }}
 
           {{ $tagInfo := (dict
             "original" $ori
             "tagName" $tag
             "attributes" $attr
-            "isSelfClose" (eq $isSelfClose "/")
+            "isSelfClose" $isSelfClose
           ) }}
 
-          {{ if ne $isSelfClose "/" }}
-            {{ $children = (partial "tocLib/inline/buildTree" (dict
-              "offset" (add $idx (len $ori))
+          {{ if not $isSelfClose }}
+            {{ $children = partial "tocLib/inline/buildTree" (dict
+              "offset" (add $idx (strings.RuneCount $ori))
               "content" $.content
               "parentTagName" $tag
-            )) }}
+            ) }}
           {{ end }}
 
           {{ $end := add $children.end 1 }}
           {{/*
-            I don't know why using (slicestr $. content $idx $end) here sometimes results in an error:
+            I don't know why using (dict "str" (slicestr $.content $idx $end)) here sometimes results in an error:
               error calling slicestr: slice boundaries out of range
-            Perhaps the impact is caused by CJK/Unicode characters?
+            Perhaps the impact is caused by CJK/Unicode characters? using `(first (sub $end $idx) (after $idx $.content))` instead.
+
+            OK, I got it.
+            `split` is split according to `rune` in golang, so each utf8 character will be treated as a character. `slicestr` is also based on utf8.
+            When `len` is used to calculate the length of `string`, it only counts the number of bytes, not the number of characters.
+            `$idx` is calculated here by the number of characters. Therefore, try to use `strings.RuneCount` to count the number of characters.
           */}}
           {{ $node = (dict
             "start" $idx
@@ -138,7 +139,7 @@
               (int (last 1 $tag))
             )
             "children" $children.children
-            "str" (first (sub $end $idx) (after $idx $.content))
+            "str" (slicestr $.content $idx $end)
             "innerHTML" ""
           ) }}
           {{ if len $children.children }}
@@ -156,7 +157,7 @@
 
     {{ if (and $isText (len $rootNodes) (eq (index (last 1 $rootNodes) 0).type "text")) }}
       {{ $t := index (findRE `[^<]+` $tc 1) 0 }}
-      {{ $idx = add $idx (len $t) -1 }}
+      {{ $idx = add $idx (strings.RuneCount $t) -1 }}
       {{ $pN := index (last 1 $rootNodes) 0 }}
       {{ $pN = merge $pN (dict
         "str" (printf "%s%s" $pN.str $t)
