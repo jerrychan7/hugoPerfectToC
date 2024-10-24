@@ -1,43 +1,25 @@
 
-{{ $docTree := . }}
+{{ $docTree := $.docTree }}
+{{ $startLevel := $.startLevel }}
+{{ $endLevel := $.endLevel }}
+
 {{ $t := partial "tocLib/inline/flatTree" (dict
-  "root" .
+  "root" $docTree
   "pid" ""
   "nodes" (dict)
   "parentTree" (dict)
 ) }}
 {{ $docNodes := $t.nodes }}
 {{ $docParentTree := $t.parentTree }}
+{{ $tocParentTree := partial "tocLib/inline/genTocParentTree" $t }}
 
-{{ $tocParentTree := dict }}
-{{ range $docNodeId, $docNode := $docNodes }}
-  {{ if not $docNode.headingLevel }}{{ continue }}{{ end }}
-  {{ $docNodeParentID := index $docParentTree $docNode.id }}
-  {{ $p := $docNode }}
-  {{ range $_, $_ := $docNodes }}
-    {{ $parent := index $docNodes (index $docParentTree $p.id) }}
-    {{ $siblingIdx := partial "tocLib/inline/getPrevSiblingHeading" (dict
-      "heading" $p
-      "parent" $parent
-    ) }}
-    {{ if le $siblingIdx -1 }}
-      {{ if eq $parent.type "root" }}
-        {{ $tocParentTree = merge $tocParentTree (dict $docNodeId $parent.id) }}
-        {{ break }}
-      {{ end }}
-      {{ $p = $parent }}
-      {{ continue }}
-    {{ end }}
-    {{ $sibling := index $parent.children $siblingIdx }}
-    {{ if (or
-      (ne $parent.id $docNodeParentID)
-      (lt $sibling.headingLevel $docNode.headingLevel)
-    ) }}
-      {{ $tocParentTree = merge $tocParentTree (dict $docNodeId $sibling.id) }}
-      {{ break }}
-    {{ end }}
-    {{ $p = $sibling }}
-  {{ end }}
+{{ if or (gt $startLevel 1) (lt $endLevel 6) }}
+  {{ $tocParentTree = partial "tocLib/inline/pruneTocTreeByHeadingLevel" (dict
+    "docNodes" $docNodes
+    "tocParentTree" $tocParentTree
+    "startLevel" $startLevel
+    "endLevel" $endLevel
+  ) }}
 {{ end }}
 
 {{ $tocTree := partial "tocLib/inline/flatDocNodes2Toctree" (dict
@@ -45,9 +27,10 @@
   "parentTree" $tocParentTree
   "id" $docTree.id
 ) }}
+
 {{ return $tocTree }}
 
-
+{{/*  =========== inline ============  */}}
 
 {{ define "partials/tocLib/inline/flatTree" }}
   {{ $root := .root }}
@@ -71,6 +54,73 @@
   {{ end }}
 
   {{ return (dict "nodes" $nodes "parentTree" $parentTree) }}
+{{ end }}
+
+{{ define "partials/tocLib/inline/genTocParentTree" }}
+  {{ $docNodes := $.nodes }}
+  {{ $docParentTree := $.parentTree }}
+  {{ $tocParentTree := dict }}
+  {{ range $docNodeId, $docNode := $docNodes }}
+    {{ if not $docNode.headingLevel }}{{ continue }}{{ end }}
+    {{ $docNodeParentID := index $docParentTree $docNode.id }}
+    {{ $notFind := true }}
+    {{ $p := $docNode }}
+    {{ range $_, $_ := $docNodes }}
+      {{ if not $notFind }}{{ break }}{{ end }}
+      {{ $parent := index $docNodes (index $docParentTree $p.id) }}
+      {{ $siblingIdx := partial "tocLib/inline/getPrevSiblingHeading" (dict
+        "heading" $p
+        "parent" $parent
+      ) }}
+      {{ if le $siblingIdx -1 }}
+        {{ if eq $parent.type "root" }}
+          {{ $tocParentTree = merge $tocParentTree (dict $docNodeId $parent.id) }}
+          {{ break }}
+        {{ end }}
+        {{ $p = $parent }}
+        {{ continue }}
+      {{ end }}
+      {{ $sibling := index $parent.children $siblingIdx }}
+      {{ if (or
+        (ne $parent.id $docNodeParentID)
+        (lt $sibling.headingLevel $docNode.headingLevel)
+      ) }}
+        {{ $tocParentTree = merge $tocParentTree (dict $docNodeId $sibling.id) }}
+        {{ break }}
+      {{ end }}
+      {{ $p = $sibling }}
+    {{ end }}
+  {{ end }}
+  {{ return $tocParentTree }}
+{{ end }}
+
+{{ define "partials/tocLib/inline/pruneTocTreeByHeadingLevel" }}
+  {{ $docNodes := .docNodes }}
+  {{ $tocParentTree := .tocParentTree }}
+  {{ $startLevel := .startLevel }}
+  {{ $endLevel := .endLevel }}
+
+  {{ range $id, $pid := $tocParentTree }}
+    {{ $headingLevel := or (index $docNodes $id "headingLevel") 0 }}
+    {{ if (or
+      (lt $headingLevel $startLevel)
+      (gt $headingLevel $endLevel)
+    ) }}
+      {{ range $id2, $pid2 := $tocParentTree }}
+        {{ if (ne $pid2 $id) }}{{ continue }}{{ end }}
+        {{ $tocParentTree = merge $tocParentTree (dict $id2 $pid) }}
+      {{ end }}
+      {{ $tocParentTree = merge $tocParentTree (dict $id -1) }}
+    {{ end }}
+  {{ end }}
+
+  {{ $t := $tocParentTree }}
+  {{ range $id, $pid := $tocParentTree }}
+    {{ if eq $pid -1 }}{{ continue }}{{ end }}
+    {{ $t = merge $t (dict $id $pid) }}
+  {{ end }}
+
+  {{ return $t }}
 {{ end }}
 
 {{/*

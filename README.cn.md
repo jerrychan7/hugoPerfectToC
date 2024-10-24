@@ -29,12 +29,13 @@
 * [x] ASCII 风格渲染
 * [x] 用户自定义渲染器
 * [x] 能随意使用的目录树，以实现任何你想要的高级功能
-* [ ] 配置 `startLevel` 和 `endLevel`
+* [x] 配置 `startLevel` 和 `endLevel`
+* [ ] 配置 `startDepth` 和 `endDepth`
 * [ ] 性能优化
 
 ## 用法
 
-将本项目中 `/tocLib` 目录下所有的html文件都放在 `你的网站或主题/partials/tocLib` 文件夹中。然后你就可以开始使用了。
+将本项目中 `/tocLib` 目录下所有的html文件都放在 `你的网站或主题/layouts/partials/tocLib` 文件夹中。然后你就可以开始使用了。
 
 例如你想在文章的开头添加目录，`layouts/_default/single.html`：
 
@@ -44,6 +45,8 @@
 
   {{- partial "tocLib/gen.html" (dict
     "page" .
+    "startLevel" 2
+    "endLevel" 3
     "renderer" "tocLib/tocTree2ul.html"
   ) -}}
 
@@ -54,20 +57,29 @@
 目前项目的性能比较差，你可以使用 `partialCached` 来略微加速，将 `PAGE.Content` 作为唯一缓存键：
 
 ```html
-{{- partialCached "tocLib/gen.html" (dict
-  "page" .
-  "renderer" "tocLib/tocTree2ul.html"
-) .Content -}}
+{{- partialCached "tocLib/gen.html" (dict "page" .) .Content -}}
 ```
 
 参数 `renderer`：
 
-* `"tocLib/tocTree2ul.html"` 缺省值。对应 Hugo 配置 `markup.tableOfContents.ordered = false` 功能
-* `"tocLib/tocTree2ol.html"` 对应 Hugo 配置 `markup.tableOfContents.ordered = true` 功能
+* `"tocLib/tocTree2ul.html"` 缺省值。对应 Hugo 配置 [`markup.tableOfContents.ordered = false`](https://gohugo.io/getting-started/configuration-markup/#ordered) 功能
+* `"tocLib/tocTree2ol.html"` 对应 Hugo 配置 [`markup.tableOfContents.ordered = true`](https://gohugo.io/getting-started/configuration-markup/#ordered) 功能
 * `"tocLib/tocTree2details.html"`
 * `"tocLib/tocTree2ascii.html"`
 
+参数 `startLevel`：和 [`markup.tableOfContents.startLevel`](https://gohugo.io/getting-started/configuration-markup/#startlevel) 逻辑一样，缺省值 `2`。
+
+参数 `endLevel`：和 [`markup.tableOfContents.endLevel`](https://gohugo.io/getting-started/configuration-markup/#endlevel) 逻辑一样，缺省值 `3`。
+
 如果你想自定义渲染器，或者任何高级的玩法，你可能需要查看下面的[原理](#原理)和[数据结构](#数据结构)章节，并参考源码。
+
+> 如果你想要和 `PAGE.TableOfContents` 生成的格式类似，你需要一个 `nav` 包装：
+> 
+> ```hugo
+> <nav id="TableOfContents">
+>   {{ partial "tocLib/gen.html" (dict "page" .) }}
+> </nav>
+> ```
 
 ## 项目存在理由
 

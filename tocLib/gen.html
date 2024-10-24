@@ -1,8 +1,14 @@
 
 {{- $page := .page -}}
 {{- $renderer := or .renderer "tocLib/tocTree2ul.html" -}}
+{{- $startLevel := or $.startLevel 2 -}}
+{{- $endLevel := or $.endLevel 3 -}}
 
 {{- $docTree := partialCached "tocLib/buildDocTree.html" $page $page.Content -}}
 {{- $docTree = partialCached "tocLib/rmNodeUnrelated2Toc.html" $docTree $page.Content -}}
-{{- $tocTree := partialCached "tocLib/doc2tocTree.html" $docTree $page.Content -}}
+{{- $tocTree := partialCached "tocLib/doc2tocTree.html" (dict
+  "docTree" $docTree
+  "startLevel" $startLevel
+  "endLevel" $endLevel
+) $page.Content $startLevel $endLevel -}}
 {{- partialCached $renderer $tocTree $page.Content -}}

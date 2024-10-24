@@ -29,21 +29,24 @@ A [Hugo](https://gohugo.io/) template library for generating the intuitive table
 * [x] ASCII style renderer
 * [x] User-defined renderers
 * [x] Free-to-use ToC tree for any advanced features you want
-* [ ] Configurable `startLevel` and `endLevel`
+* [x] Configurable `startLevel` and `endLevel`
+* [ ] Configurable `startDepth` and `endDepth`
 * [ ] Performance optimization
 
 ## Usage
 
-Put all the HTML files in the `/tocLib` directory of this project into the `your site or theme/partials/tocLib` folder. Then you can start using it.
+Put all the HTML files in the `/tocLib` directory of this project into the `your site or theme/layouts/partials/tocLib` folder. Then you can start using it.
 
 For example, if you want to add a ToC at the beginning of the article, `layouts/_default/single.html`:
 
-```hugo
+```html
 {{ define "main" }}
   <h1>{{ .Title }}</h1>
 
   {{- partial "tocLib/gen.html" (dict
     "page" .
+    "startLevel" 2
+    "endLevel" 3
     "renderer" "tocLib/tocTree2ul.html"
   ) -}}
 
@@ -53,21 +56,30 @@ For example, if you want to add a ToC at the beginning of the article, `layouts/
 
 The performance of the current project is not very good, you can use `partialCached` to speed it up slightly, using `PAGE.Content` as the unique cache key:
 
-```hugo
-{{- partialCached "tocLib/gen.html" (dict
-  "page" .
-  "renderer" "tocLib/tocTree2ul.html"
-) .Content -}}
+```html
+{{- partialCached "tocLib/gen.html" (dict "page" .) .Content -}}
 ```
 
 Params `renderer`:
 
-* `"tocLib/tocTree2ul.html"` Default value. Corresponding to Hugo configuration `markup.tableOfContents.ordered = false`
-* `"tocLib/tocTree2ol.html"` Corresponding to Hugo configuration `markup.tableOfContents.ordered = true`
+* `"tocLib/tocTree2ul.html"` Default value. Corresponding to Hugo configuration [`markup.tableOfContents.ordered = false`](https://gohugo.io/getting-started/configuration-markup/#ordered)
+* `"tocLib/tocTree2ol.html"` Corresponding to Hugo configuration [`markup.tableOfContents.ordered = true`](https://gohugo.io/getting-started/configuration-markup/#ordered)
 * `"tocLib/tocTree2details.html"`
 * `"tocLib/tocTree2ascii.html"`
 
+Params `startLevel`: Same logic as [`markup.tableOfContents.startLevel`](https://gohugo.io/getting-started/configuration-markup/#startlevel), default value `2`.
+
+Params `endLevel`: Same logic as [`markup.tableOfContents.endLevel`](https://gohugo.io/getting-started/configuration-markup/#endlevel), default value `3`.
+
 If you want to customize the renderer, or any advanced usage, you may need to read the [principle](#principle) and [data structure](#data-structure) sections below and check out the source code of this project.
+
+> If you want a format similar to what is produced by `PAGE.TableOfContents`, you need a `nav` wrapper:
+> 
+> ```html
+> <nav id="TableOfContents">
+>   {{ partial "tocLib/gen.html" (dict "page" .) }}
+> </nav>
+> ```
 
 ## Reason for the project
 
