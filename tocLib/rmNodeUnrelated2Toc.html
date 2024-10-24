@@ -3,9 +3,12 @@
 
 {{ define "partials/tocLib/inline/rmNodeUnrelated2Toc" }}
   {{ $root := . }}
-  {{ $ans := dict "tree" $root "need2rm" true }}
+
+  {{ $need2rm := true }}
+  {{ $tree := $root }}
+
   {{ if $root.headingLevel }}
-    {{ $ans = merge $ans (dict "need2rm" false) }}
+    {{ $need2rm = false }}
   {{ else if eq $root.type "root" "tag" }}
     {{ $children := slice }}
     {{ range $_, $node := $root.children }}
@@ -14,12 +17,11 @@
         {{ $children = $children | append $res.tree }}
       {{ end }}
     {{ end }}
-    {{ $ans = merge $ans (dict
-      "tree" (merge $root (dict "children" $children))
-    ) }}
+    {{ $root = merge $root (dict "children" $children) }}
     {{ if eq $root.type "tag" }}
-      {{ $ans = merge $ans (dict "need2rm" (eq (len $children) 0)) }}
+      {{ $need2rm = eq (len $children) 0 }}
     {{ end }}
   {{ end }}
-  {{ return $ans }}
+
+  {{ return (dict "tree" $root "need2rm" $need2rm) }}
 {{ end }}
