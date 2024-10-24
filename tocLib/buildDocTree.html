@@ -53,7 +53,7 @@
             "type" "comment"
             "str" $comment
           }}
-          {{ $idx = add $idx $end -1 }}
+          {{ $idx = (add $end -1) }}
           {{ $isText = false }}
         {{ end }}
       {{ else }}
