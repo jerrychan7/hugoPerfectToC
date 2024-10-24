@@ -13,10 +13,8 @@
 {{ range $docNodeId, $docNode := $docNodes }}
   {{ if not $docNode.headingLevel }}{{ continue }}{{ end }}
   {{ $docNodeParentID := index $docParentTree $docNode.id }}
-  {{ $notFind := true }}
   {{ $p := $docNode }}
-  {{ range $_, $_ := $docNode }}
-    {{ if not $notFind }}{{ break }}{{ end }}
+  {{ range $_, $_ := $docNodes }}
     {{ $parent := index $docNodes (index $docParentTree $p.id) }}
     {{ $siblingIdx := partial "tocLib/inline/getPrevSiblingHeading" (dict
       "heading" $p
