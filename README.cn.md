@@ -5,6 +5,8 @@
 
 一个用于生成符合直觉的目录的 [Hugo](https://gohugo.io/) 模板库。
 
+开发不易，如果你使用了或喜欢本仓库，可以给我一个Star。~~关注项目不迷路~~
+
 - [Hugo Perfect ToC Generator](#hugo-perfect-toc-generator)
   - [特性](#特性)
   - [用法](#用法)

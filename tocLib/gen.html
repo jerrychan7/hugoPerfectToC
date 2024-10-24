@@ -1,4 +1,10 @@
 
+{{/*
+  https://github.com/jerrychan7/hugoPerfectToC
+
+  A Hugo template library for generating the intuitive table of contents.
+*/}}
+
 {{- $page := .page -}}
 {{- $renderer := or .renderer "tocLib/tocTree2ul.html" -}}
 {{- $startLevel := or $.startLevel 2 -}}

@@ -5,6 +5,8 @@
 
 A [Hugo](https://gohugo.io/) template library for generating the intuitive table of contents.
 
+Development is not easy. If you use or like this repository, please give me a Star.
+
 - [Hugo Perfect ToC Generator](#hugo-perfect-toc-generator)
   - [Feature](#feature)
   - [Usage](#usage)
