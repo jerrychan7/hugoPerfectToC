@@ -13,20 +13,19 @@
 {{ $docParentTree := $t.parentTree }}
 {{ $tocParentTree := partial "tocLib/inline/genTocParentTree" $t }}
 
-{{ if or (gt $startLevel 1) (lt $endLevel 6) }}
-  {{ $tocParentTree = partial "tocLib/inline/pruneTocTreeByHeadingLevel" (dict
-    "docNodes" $docNodes
-    "tocParentTree" $tocParentTree
-    "startLevel" $startLevel
-    "endLevel" $endLevel
-  ) }}
-{{ end }}
-
 {{ $tocTree := partial "tocLib/inline/flatDocNodes2Toctree" (dict
   "nodes" $docNodes
   "parentTree" $tocParentTree
   "id" $docTree.id
 ) }}
+
+{{ if or (gt $startLevel 1) (lt $endLevel 6) }}
+  {{ $tocTree = (partial "tocLib/inline/pruneTocTreeByHeadingLevel" (dict
+    "tocTree" $tocTree
+    "startLevel" $startLevel
+    "endLevel" $endLevel
+  )).tocTree }}
+{{ end }}
 
 {{ return $tocTree }}
 
@@ -63,10 +62,8 @@
   {{ range $docNodeId, $docNode := $docNodes }}
     {{ if not $docNode.headingLevel }}{{ continue }}{{ end }}
     {{ $docNodeParentID := index $docParentTree $docNode.id }}
-    {{ $notFind := true }}
     {{ $p := $docNode }}
     {{ range $_, $_ := $docNodes }}
-      {{ if not $notFind }}{{ break }}{{ end }}
       {{ $parent := index $docNodes (index $docParentTree $p.id) }}
       {{ $siblingIdx := partial "tocLib/inline/getPrevSiblingHeading" (dict
         "heading" $p
@@ -95,32 +92,40 @@
 {{ end }}
 
 {{ define "partials/tocLib/inline/pruneTocTreeByHeadingLevel" }}
-  {{ $docNodes := .docNodes }}
-  {{ $tocParentTree := .tocParentTree }}
+  {{ $tocTree := .tocTree }}
   {{ $startLevel := .startLevel }}
   {{ $endLevel := .endLevel }}
 
-  {{ range $id, $pid := $tocParentTree }}
-    {{ $headingLevel := or (index $docNodes $id "headingLevel") 0 }}
-    {{ if (or
-      (lt $headingLevel $startLevel)
-      (gt $headingLevel $endLevel)
+  {{ $need2rm := and $tocTree.headingLevel (or
+    (lt $tocTree.headingLevel $startLevel)
+    (gt $tocTree.headingLevel $endLevel)
+  ) }}
+
+  {{ $children := (slice) }}
+  {{ range $c := $tocTree.children }}
+    {{ $res := partial "tocLib/inline/pruneTocTreeByHeadingLevel" (dict
+      "tocTree" $c
+      "startLevel" $startLevel
+      "endLevel" $endLevel
     ) }}
-      {{ range $id2, $pid2 := $tocParentTree }}
-        {{ if (ne $pid2 $id) }}{{ continue }}{{ end }}
-        {{ $tocParentTree = merge $tocParentTree (dict $id2 $pid) }}
+    {{/*
+      The append method will most likely form a nested array when the two collection types are inconsistent.
+      https://github.com/gohugoio/hugo/blob/master/tpl/collections/append.go
+      https://github.com/gohugoio/hugo/blob/master/common/collections/append.go
+      When $res.tocTree.children([]map[string]any) is pushed into $children([]any), a nested array is formed because the two types are different.
+    */}}
+    {{/*  {{ $children = $children | append (cond $res.need2rm $res.tocTree.children $res.tocTree) }}  */}}
+    {{ if $res.need2rm }}
+      {{ range $c := $res.tocTree.children }}
+        {{ $children = $children | append $c }}
       {{ end }}
-      {{ $tocParentTree = merge $tocParentTree (dict $id -1) }}
+    {{ else }}
+      {{ $children = $children | append $res.tocTree }}
     {{ end }}
   {{ end }}
+  {{ $tocTree = merge $tocTree (dict "children" $children) }}
 
-  {{ $t := $tocParentTree }}
-  {{ range $id, $pid := $tocParentTree }}
-    {{ if eq $pid -1 }}{{ continue }}{{ end }}
-    {{ $t = merge $t (dict $id $pid) }}
-  {{ end }}
-
-  {{ return $t }}
+  {{ return (dict "tocTree" $tocTree "need2rm" $need2rm) }}
 {{ end }}
 
 {{/*
