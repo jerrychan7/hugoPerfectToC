@@ -12,6 +12,24 @@
 {{- $startDepth := or $.startDepth 1 -}}
 {{- $endDepth := or $.endDepth 255 -}}
 
+{{- if gt $startLevel $endLevel -}}
+  {{- $t := $startLevel -}}
+  {{- $startLevel = $endLevel -}}
+  {{- $endLevel = $t -}}
+{{- end -}}
+
+{{- $startLevel = math.Max 1 (math.Min $startLevel 6) | int -}}
+{{- $endLevel = math.Max 1 (math.Min $endLevel 6) | int -}}
+
+{{- if gt $startDepth $endDepth -}}
+  {{- $t := $startDepth -}}
+  {{- $startDepth = $endDepth -}}
+  {{- $endDepth = $t -}}
+{{- end -}}
+
+{{- $startDepth = math.Max 1 $startDepth | int -}}
+{{- $endDepth = math.Max 1 $endDepth | int -}}
+
 {{- $docTree := partialCached "tocLib/buildDocTree.html" $page $page.Content -}}
 {{- $docTree = partialCached "tocLib/rmNodeUnrelated2Toc.html" $docTree $page.Content -}}
 {{- $tocTree := partialCached "tocLib/doc2tocTree.html" (dict
