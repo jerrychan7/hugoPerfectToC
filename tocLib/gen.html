@@ -9,6 +9,8 @@
 {{- $renderer := or .renderer "tocLib/tocTree2ul.html" -}}
 {{- $startLevel := or $.startLevel 2 -}}
 {{- $endLevel := or $.endLevel 3 -}}
+{{- $startDepth := or $.startDepth 1 -}}
+{{- $endDepth := or $.endDepth 255 -}}
 
 {{- $docTree := partialCached "tocLib/buildDocTree.html" $page $page.Content -}}
 {{- $docTree = partialCached "tocLib/rmNodeUnrelated2Toc.html" $docTree $page.Content -}}
@@ -16,5 +18,9 @@
   "docTree" $docTree
   "startLevel" $startLevel
   "endLevel" $endLevel
-) $page.Content $startLevel $endLevel -}}
-{{- partialCached $renderer $tocTree $page.Content -}}
+  "startDepth" $startDepth
+  "endDepth" $endDepth
+) $page.Content $startLevel $endLevel $startDepth $endDepth -}}
+{{- partialCached $renderer $tocTree
+  $page.Content $renderer $startLevel $endLevel $startDepth $endDepth
+-}}

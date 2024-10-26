@@ -2,6 +2,8 @@
 {{ $docTree := $.docTree }}
 {{ $startLevel := $.startLevel }}
 {{ $endLevel := $.endLevel }}
+{{ $startDepth := $.startDepth }}
+{{ $endDepth := $.endDepth }}
 
 {{ $t := partial "tocLib/inline/flatTree" (dict
   "root" $docTree
@@ -24,6 +26,15 @@
     "tocTree" $tocTree
     "startLevel" $startLevel
     "endLevel" $endLevel
+  )).tocTree }}
+{{ end }}
+
+{{ if or (ne $startDepth 1) (ne $endDepth 255) }}
+  {{ $tocTree = (partial "tocLib/inline/pruneTocTreeByDepth" (dict
+    "tocTree" $tocTree
+    "depth" 0
+    "startDepth" $startDepth
+    "endDepth" $endDepth
   )).tocTree }}
 {{ end }}
 
@@ -121,6 +132,38 @@
       {{ end }}
     {{ else }}
       {{ $children = $children | append $res.tocTree }}
+    {{ end }}
+  {{ end }}
+  {{ $tocTree = merge $tocTree (dict "children" $children) }}
+
+  {{ return (dict "tocTree" $tocTree "need2rm" $need2rm) }}
+{{ end }}
+
+{{ define "partials/tocLib/inline/pruneTocTreeByDepth" }}
+  {{ $tocTree := .tocTree }}
+  {{ $depth := .depth }}
+  {{ $startDepth := .startDepth }}
+  {{ $endDepth := .endDepth }}
+
+  {{ $need2rm := and $tocTree.headingLevel (lt $depth $startDepth) }}
+
+  {{ $children := (slice) }}
+  {{ if lt $depth $endDepth }}
+    {{ range $c := $tocTree.children }}
+      {{ $res := partial "tocLib/inline/pruneTocTreeByDepth" (dict
+        "tocTree" $c
+        "depth" (add $depth 1)
+        "startDepth" $startDepth
+        "endDepth" $endDepth
+      ) }}
+      {{/*  {{ $children = $children | append (cond $res.need2rm $res.tocTree.children $res.tocTree) }}  */}}
+      {{ if $res.need2rm }}
+        {{ range $c := $res.tocTree.children }}
+          {{ $children = $children | append $c }}
+        {{ end }}
+      {{ else }}
+        {{ $children = $children | append $res.tocTree }}
+      {{ end }}
     {{ end }}
   {{ end }}
   {{ $tocTree = merge $tocTree (dict "children" $children) }}

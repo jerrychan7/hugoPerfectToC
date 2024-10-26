@@ -32,7 +32,7 @@
 * [x] 用户自定义渲染器
 * [x] 能随意使用的目录树，以实现任何你想要的高级功能
 * [x] 配置 `startLevel` 和 `endLevel`
-* [ ] 配置 `startDepth` 和 `endDepth`
+* [x] 配置 `startDepth` 和 `endDepth`
 * [ ] 性能优化
 
 ## 用法
@@ -72,6 +72,35 @@
 参数 `startLevel`：和 [`markup.tableOfContents.startLevel`](https://gohugo.io/getting-started/configuration-markup/#startlevel) 逻辑一样，缺省值 `2`。
 
 参数 `endLevel`：和 [`markup.tableOfContents.endLevel`](https://gohugo.io/getting-started/configuration-markup/#endlevel) 逻辑一样，缺省值 `3`。
+
+参数 `startDepth`：定义了目录树的起始深度（包含）。缺省值 1。  
+参数 `endDepth`：定义了目录树的结束深度（包含）。缺省值 255。
+
+> [!Tip]
+> `startDepth` 和 `endDepth` 是在 `startLevel` 和 `endLevel` 之后运行的。
+
+例如，对于以下文档：
+
+```md
+# depth 1, heading level 1
+
+> # depth 2, heading level 1
+> ## depth 3, heading level 2
+> ### depth 4, heading level 3
+> #### depth 5, heading level 4
+> ##### depth 6, heading level 5
+```
+
+如果使用配置项 `startLevel = 2, endLevel = 5; startDepth = 2, endDepth = 3`，则会生成：
+
+```text
+`-- depth 4, heading level 3
+    `-- depth 5, heading level 4
+```
+
+> [!NOTE]
+> 如果你要控制目录的深度范围，应该使用 `startDepth` 和 `endDepth` 而非 `startLevel` 和 `endLevel`。  
+> `startLevel` 和 `endLevel` 本意只是为了兼容 Hugo 用来控制要显示的目录级别的设置。但单纯通过这两个配置项是无法控制目录显示的深度的。
 
 如果你想自定义渲染器，或者任何高级的玩法，你可能需要查看下面的[原理](#原理)和[数据结构](#数据结构)章节，并参考源码。
 

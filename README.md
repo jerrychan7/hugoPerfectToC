@@ -32,7 +32,7 @@ Development is not easy. If you use or like this repository, please give me a St
 * [x] User-defined renderers
 * [x] Free-to-use ToC tree for any advanced features you want
 * [x] Configurable `startLevel` and `endLevel`
-* [ ] Configurable `startDepth` and `endDepth`
+* [x] Configurable `startDepth` and `endDepth`
 * [ ] Performance optimization
 
 ## Usage
@@ -72,6 +72,36 @@ Params `renderer`:
 Params `startLevel`: Same logic as [`markup.tableOfContents.startLevel`](https://gohugo.io/getting-started/configuration-markup/#startlevel), default value `2`.
 
 Params `endLevel`: Same logic as [`markup.tableOfContents.endLevel`](https://gohugo.io/getting-started/configuration-markup/#endlevel), default value `3`.
+
+Params `startDepth`: defines the starting depth of the directory tree (inclusive). Default value is 1.
+
+Params `endDepth`: defines the ending depth of the directory tree (inclusive). Default value is 255.
+
+> [!Tip]
+> `startDepth` and `endDepth` are executed after `startLevel` and `endLevel`.
+
+For example, for the following markdown:
+
+```md
+# depth 1, heading level 1
+
+> # depth 2, heading level 1
+> ## depth 3, heading level 2
+> ### depth 4, heading level 3
+> #### depth 5, heading level 4
+> ##### depth 6, heading level 5
+```
+
+If you use the configuration `startLevel = 2, endLevel = 5; startDepth = 2, endDepth = 3`, this will generate:
+
+```text
+`-- depth 4, heading level 3
+    `-- depth 5, heading level 4
+```
+
+> [!NOTE]
+> If you want to control the depth range of the ToC, you should use `startDepth` and `endDepth` instead of `startLevel` and `endLevel`.  
+> `startLevel` and `endLevel` are intended to be compatible with Hugo's configuration for controlling the level of headings to be displayed. However, these two configuration items alone cannot control the depth of the directory display.
 
 If you want to customize the renderer, or any advanced usage, you may need to read the [principle](#principle) and [data structure](#data-structure) sections below and check out the source code of this project.
 
